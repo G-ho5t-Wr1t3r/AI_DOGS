@@ -51,3 +51,23 @@ Pulizia profonda
 ```
 docker system prune -f
 ```
+
+## Su quali OS funziona?
+
+Struttura della repo:
+```
+│   Dockerfile
+│   entrypoint.sh
+│   kill-frozen-container.py
+│   README.md
+│
+├───gemini_output
+├───Linux_Utilities
+│       remove.sh
+│       setup.sh
+│
+└───Windows_Utilities
+        Gemini.bat
+        README.md
+```
+Verifica il contenuto delle cartelle Linux Utilities e Windows Utilities in base al tuo OS.
