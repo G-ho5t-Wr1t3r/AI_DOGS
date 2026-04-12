@@ -1,4 +1,4 @@
-# 🚀 Avviatore Docker per Gemini Env (Windows)
+# Runner Docker per Gemini Env (Windows)
 
 Questo script Batch (`Gemini.bat`) automatizza e semplifica l'avvio del container Docker `gemini-env` su sistemi Windows. Risolve i comuni problemi di formattazione dei percorsi e garantisce che la sessione di login (autenticazione Google/Gemini) rimanga salvata tra un riavvio e l'altro.
 
@@ -6,27 +6,27 @@ Questo script Batch (`Gemini.bat`) automatizza e semplifica l'avvio del containe
 
 Modifica il file ```Gemini.bat``` mappando i percorsi corretti e sostituendo il placeholder.
 
-## 📋 Prerequisiti
+## Prerequisiti
 
 1. **Docker Desktop** installato, in esecuzione e con l'integrazione WSL2 attiva.
 2. L'immagine Docker `gemini-env` deve essere già stata compilata sulla tua macchina.
    *(Se non l'hai fatto: vai nella cartella del Dockerfile ed esegui `docker build -t gemini-env .`)*
 
-## 🛠️ Come utilizzare lo script
+## Come utilizzare lo script
 
 1. Fai doppio clic sul file `gemini.bat`.
 2. **Step 1:** Inserisci il percorso assoluto della cartella del tuo progetto (es. `D:\MieiProgetti\Progetto`).
 3. **Step 2:** Scegli il percorso di output. Puoi premere **INVIO** per usare quello di default, oppure scriverne uno nuovo.
 4. **Conferma:** Lo script ti mostrerà un riepilogo. Digita `Y` per confermare o `N` per correggere i dati.
 
-## ✨ Funzionalità "Avvio Rapido" (Shortcut)
+## Funzionalità "Avvio Rapido" (Shortcut)
 
 Se lavori spesso sullo stesso progetto, lo script ti offre la possibilità di creare un **file di avvio rapido** (es. `run_gemini_Progetto.bat`). 
 
 * **Cosa fa:** Crea un nuovo mini-script configurato con i percorsi esatti che hai appena inserito.
 * **Vantaggio:** La prossima volta ti basterà fare doppio clic sul file di avvio rapido per lanciare direttamente il container, senza dover digitare di nuovo i percorsi.
 
-## 📁 Mappatura dei Volumi Docker
+## Mappatura dei Volumi Docker
 
 Lo script mappa automaticamente 4 volumi fondamentali per il funzionamento dell'ambiente:
 
