@@ -16,3 +16,4 @@ You must do this writing a subtitles `## PROBLEM NAME` and `### Context`, `### S
 
 Applicando regole sempre più stringenti riusciremo a fissare dei comporetamenti specifici nel modus operandi dell'agente.
 Qualora la modifica della memoria con `/memory add` dovesse essere disabilitata, aprire il volume `gemini-auth-data` del container, navigare al percorso `gemini-auth-data/extensions/superpowers/GEMINI.md` e aggiungere manualmente le regole.
+Path: `~/.local/share/containers/storage/overlay/0515bea727eb2ce1aadb9009c52cefb213808fd9f7538e3276f987495ab5c53e/diff/root/.gemini/extensions/superpowers`
