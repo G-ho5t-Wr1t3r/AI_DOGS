@@ -143,7 +143,8 @@ podman system prune -f
 
 ````</ID_CONTAINER>
 </details>
-## Su quali OS funziona?
+
+# Su quali OS funziona?
 
 Struttura della repo:
 ```
