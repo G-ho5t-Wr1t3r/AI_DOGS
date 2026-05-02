@@ -6,8 +6,8 @@ Per dare delle istruzioni fisse che Gemini dovrà sempre rispettare, possiamo co
 ```
 
 ```
-/memory add "Every time in wich we are starting a new conversation you have to create a new session report at the path @output/reports named: "report_session_TODAY_DATE.md" in wich you must descripe all the workflow, the problem solved, copying code snippets, coment the work executed... 
-You must do this writing a subtitles `## PROBLEM NAME` and `### Context`, `### Solution` ecc. All the file must be written in first person, the narrator is not Gemini CLI bt the developer. The reports must be very exhaustive for the reader.
+/memory add "Every time in wich we are starting a new conversation you have to create a new session report at the path @output/reports named: 'report_session_TODAY_DATE.md' in wich you must descripe all the workflow, the problem solved, copying code snippets, coment the work executed... 
+You must do this writing a subtitles `## PROBLEM NAME` and `### Context`, `### Solution` ecc. All the file must be written in first person, the narrator is not Gemini CLI bt the developer. The reports must be very exhaustive for the reader."
 ```
 
 ```
@@ -15,3 +15,4 @@ You must do this writing a subtitles `## PROBLEM NAME` and `### Context`, `### S
 ```
 
 Applicando regole sempre più stringenti riusciremo a fissare dei comporetamenti specifici nel modus operandi dell'agente.
+Qualora la modifica della memoria con `/memory add` dovesse essere disabilitata, aprire il volume `gemini-auth-data` del container, navigare al percorso `gemini-auth-data/extensions/superpowers/GEMINI.md` e aggiungere manualmente le regole.

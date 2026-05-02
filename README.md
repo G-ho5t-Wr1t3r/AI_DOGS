@@ -1,4 +1,9 @@
 # Istruzioni
+
+> DISCLAIMER:
+> Il Dockerfile è configurato per installare automaticamente la skill `superpowers`, per evitare questo comportamento, commentrare la riga 20 del file: 
+> `RUN yes | gemini extensions install https://github.com/obra/superpowers || (echo "Extension failed" && exit 1)`
+
 Per costruire l'immagine per la prima volta runnare il comando 
 ```
 docker build -t gemini-env .
