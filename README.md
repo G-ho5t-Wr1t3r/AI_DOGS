@@ -141,7 +141,6 @@ Pulizia profonda
 podman system prune -f
 ```
 
-````</ID_CONTAINER>
 </details>
 
 # Su quali OS funziona?
