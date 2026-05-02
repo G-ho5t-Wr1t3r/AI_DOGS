@@ -1,31 +1,35 @@
-# Use full debian image
+# Base debian image
 FROM node:20-bookworm
 
-# Force true color terminal
+# Set terminal colors
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
 
-# Install basic required tools
+# Install required packages
 RUN apt-get update && apt-get install -y \
     curl \
     tree \
     nano \
-    && rm -rf /var/lib/apt/lists/*
+    git \
+    || (echo "Apt failed" && exit 1)
 
-# Install official Gemini CLI
-RUN npm install -g @google/gemini-cli
+# Install Gemini CLI
+RUN npm install -g @google/gemini-cli || (echo "NPM failed" && exit 1)
 
-# Setup application working directory
+# Install superpowers extension
+RUN gemini extensions install https://github.com/obra/superpowers || (echo "Extension failed" && exit 1)
+
+# Set working directory
 WORKDIR /app
 
-# Create necessary internal directories
-RUN mkdir -p /app/context /mnt/host_context /root/.gemini /root/.config
+# Create required directories
+RUN mkdir -p /app/context /mnt/host_context /root/.gemini /root/.config || (echo "Mkdir failed" && exit 1)
 
-# Copy container entrypoint script
+# Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# Make entrypoint script executable
-RUN chmod +x /usr/local/bin/entrypoint.sh
+# Make entrypoint executable
+RUN chmod +x /usr/local/bin/entrypoint.sh || (echo "Chmod failed" && exit 1)
 
-# Set the container entrypoint
+# Set container entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
