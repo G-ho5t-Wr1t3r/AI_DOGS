@@ -16,6 +16,13 @@ docker run -it --rm \
   gemini-env
 ```
 
+Alternativa Windows:
+```
+docker run -it --rm `
+   -v gemini-auth-data:/root/.config `
+   gemini-env
+```
+
 Una volta dentro il container eseguire
 ```
 gemini

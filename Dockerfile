@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 RUN npm install -g @google/gemini-cli || (echo "NPM failed" && exit 1)
 
 # Install superpowers extension
-RUN gemini extensions install https://github.com/obra/superpowers || (echo "Extension failed" && exit 1)
+RUN yes | gemini extensions install https://github.com/obra/superpowers || (echo "Extension failed" && exit 1)
 
 # Set working directory
 WORKDIR /app
