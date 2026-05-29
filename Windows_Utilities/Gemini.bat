@@ -13,6 +13,7 @@ set "DEFAULT_OUT_PATH=INSERISCI\IL\DEFAULT\PATH\OUTPUT\GEMINI"
 :INPUT_PROJECT
 echo --- STEP 1: Progetto ---
 set /p PROJECT_PATH="Inserisci il path del progetto (es. D:\Cartella\Progetto): "
+set "PROJECT_PATH=!PROJECT_PATH:"=!"
 if "%PROJECT_PATH%"=="" (
     echo Il path del progetto non puo essere vuoto.
     goto INPUT_PROJECT
@@ -27,6 +28,7 @@ echo --- STEP 2: Output ---
 echo Premi INVIO per usare il path di default: %DEFAULT_OUT_PATH%
 set "USER_OUT_PATH="
 set /p USER_OUT_PATH="Oppure inserisci un nuovo path di output: "
+set "USER_OUT_PATH=!USER_OUT_PATH:"=!"
 
 if "%USER_OUT_PATH%"=="" (
     set "FINAL_OUT_PATH=%DEFAULT_OUT_PATH%"

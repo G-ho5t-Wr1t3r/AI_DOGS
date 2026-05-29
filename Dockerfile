@@ -28,6 +28,10 @@ RUN mkdir -p /app/context /mnt/host_context /root/.gemini /root/.config || (echo
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
+# chmod -R 755 serve per garantire che lo script sia eseguibile, anche se i permessi vengono modificati durante la copia
+RUN mkdir -p /app/utility && chmod -R 755 /app/utility || (echo "Mkdir or Chmod failed" && exit 1)
+COPY utility.sh /app/utility/utility.sh
+
 # Make entrypoint executable
 RUN chmod +x /usr/local/bin/entrypoint.sh || (echo "Chmod failed" && exit 1)
 

@@ -32,5 +32,8 @@ fi
 # Print shell startup message
 echo "--- Opening Interactive Shell ---"
 
+chmod +x /app/utility/utility.sh || (echo "Chmod failed" && exit 1)
+bash /app/utility/utility.sh || (echo "Utility script execution failed" && exit 1)
+
 # Execute interactive bash shell
 exec /bin/bash
