@@ -84,7 +84,7 @@ claude-run() {
 }
 ```
 
-Poi ricarichi la shell con `source ~/.bashrc` (o `~/.zshrc`) e da qualunque cartella di progetto ti basta digitare `claude-run`. Niente script dedicato, niente percorsi da riscrivere ogni volta: il `$PWD` ci pensa da solo. 🎉
+Poi ricarichi la shell con `source ~/.bashrc` (o `~/.zshrc`) e da qualunque cartella di progetto ti basta digitare `claude-run`. Niente script dedicato, niente percorsi da riscrivere ogni volta: il `$PWD` ci pensa da solo. 
 
 ## ⚠️ Risoluzione dei Problemi
 
@@ -180,7 +180,7 @@ claude-run() {
 }
 ```
 
-Then reload the shell with `source ~/.bashrc` (or `~/.zshrc`) and from any project folder just type `claude-run`. No dedicated script, no paths to rewrite every time: `$PWD` handles it for you. 🎉
+Then reload the shell with `source ~/.bashrc` (or `~/.zshrc`) and from any project folder just type `claude-run`. No dedicated script, no paths to rewrite every time: `$PWD` handles it for you. 
 
 ## ⚠️ Troubleshooting
 
