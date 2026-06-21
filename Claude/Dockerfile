@@ -33,7 +33,7 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY utility.sh /app/utility/utility.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /app/utility/utility.sh || (echo "Chmod failed" && exit 1)
 
-RUN chown -R node:node /home/node /app || (echo "Chown failed" && exit 1)
+RUN chown -R node:node /home/node /app /mnt || (echo "Chown failed" && exit 1)
 
 USER node
 
