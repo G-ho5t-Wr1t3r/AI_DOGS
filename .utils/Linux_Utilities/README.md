@@ -73,8 +73,9 @@ In fase di Setup lo script monta:
 
 Qui non ti serve tutto l'apparato di launcher e doppi clic che tocca sopportare su Windows. Per l'avvio quotidiano di un progetto ti basta insegnare alla tua shell un trucchetto: aggiungi una funzione al tuo `~/.bashrc` (o `~/.zshrc`).
 
+<details open>
+	<summary><b>docker</b></summary>
 ```bash
-# Avvia Claude nel progetto in cui ti trovi adesso
 claude-run() {
     docker run -it --rm \
         -v "$PWD:/mnt/host_context" \
@@ -83,6 +84,20 @@ claude-run() {
         claude-env
 }
 ```
+</details>
+
+<details>
+	<summary><b>podman</b></summary>
+```bash
+claude-run() {
+    podman run -it --rm \
+        -v "$PWD:/mnt/host_context:Z" \
+        -v claude-auth-data:/home/node/.claude:Z \
+        -v "$PWD:/app/output:Z" \
+        claude-env
+}
+```
+</details>
 
 Poi ricarichi la shell con `source ~/.bashrc` (o `~/.zshrc`) e da qualunque cartella di progetto ti basta digitare `claude-run`. Niente script dedicato, niente percorsi da riscrivere ogni volta: il `$PWD` ci pensa da solo. 
 
