@@ -76,28 +76,30 @@ Qui non ti serve tutto l'apparato di launcher e doppi clic che tocca sopportare 
 <details open>
 	<summary><b>docker</b></summary>
 ```bash
-claude-run() {
-    docker run -it --rm \
-        --userns=keep-id \
-        -v "$PWD:/mnt/host_context" \
-        -v claude-auth-data:/home/node/.claude \
-        -v $PWD:/app/output \
-        claude-env
-}
+	
+	claude-run() {
+	    docker run -it --rm \
+	        --userns=keep-id \
+	        -v "$PWD:/mnt/host_context" \
+	        -v claude-auth-data:/home/node/.claude \
+	        -v $PWD:/app/output \
+	        claude-env
+	}
 ```
 </details>
 
 <details>
 	<summary><b>podman</b></summary>
 ```bash
-claude-run() {
-    podman run -it --rm \
-        --userns=keep-id \
-        -v "$PWD:/mnt/host_context:Z" \
-        -v claude-auth-data:/home/node/.claude:Z \
-        -v "$PWD:/app/output:Z" \
-        claude-env
-}
+	
+	claude-run() {
+	    podman run -it --rm \
+	        --userns=keep-id \
+	        -v "$PWD:/mnt/host_context:Z" \
+	        -v claude-auth-data:/home/node/.claude:Z \
+	        -v "$PWD:/app/output:Z" \
+	        claude-env
+	}
 ```
 </details>
 
