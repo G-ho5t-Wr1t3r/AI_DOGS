@@ -78,9 +78,10 @@ Qui non ti serve tutto l'apparato di launcher e doppi clic che tocca sopportare 
 ```bash
 claude-run() {
     docker run -it --rm \
+        --userns=keep-id \
         -v "$PWD:/mnt/host_context" \
-        -v claude-auth-data:/root \
-        -v ~/Desktop/Coding/Claude/claude_output:/app/output \
+        -v claude-auth-data:/home/node/.claude \
+        -v $PWD:/app/output \
         claude-env
 }
 ```
@@ -91,6 +92,7 @@ claude-run() {
 ```bash
 claude-run() {
     podman run -it --rm \
+        --userns=keep-id \
         -v "$PWD:/mnt/host_context:Z" \
         -v claude-auth-data:/home/node/.claude:Z \
         -v "$PWD:/app/output:Z" \
@@ -184,16 +186,33 @@ During Setup the script mounts:
 
 Over here you don't need the whole launcher-and-double-click apparatus you have to put up with on Windows. For the daily launch of a project, just teach your shell a little trick: add a function to your `~/.bashrc` (or `~/.zshrc`).
 
+<details open>
+	<summary><b>docker</b></summary>
 ```bash
-# Start Claude in whatever project you're currently in
 claude-run() {
     docker run -it --rm \
+        --userns=keep-id \
         -v "$PWD:/mnt/host_context" \
-        -v claude-auth-data:/root \
-        -v ~/Desktop/Coding/Claude/claude_output:/app/output \
+        -v claude-auth-data:/home/node/.claude \
+        -v $PWD:/app/output \
         claude-env
 }
 ```
+</details>
+
+<details>
+	<summary><b>podman</b></summary>
+```bash
+claude-run() {
+    podman run -it --rm \
+        --userns=keep-id \
+        -v "$PWD:/mnt/host_context:Z" \
+        -v claude-auth-data:/home/node/.claude:Z \
+        -v "$PWD:/app/output:Z" \
+        claude-env
+}
+```
+</details>
 
 Then reload the shell with `source ~/.bashrc` (or `~/.zshrc`) and from any project folder just type `claude-run`. No dedicated script, no paths to rewrite every time: `$PWD` handles it for you. 
 

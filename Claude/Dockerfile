@@ -27,13 +27,14 @@ RUN chmod +x /home/node/.claude/hooks/claudio-session-start.sh
 # Set working directory
 WORKDIR /app
 
-RUN mkdir -p /app/context /mnt/host_context /app/utility || (echo "Mkdir failed" && exit 1)
+RUN mkdir -p /app/context /mnt/host_context /app/output /app/utility || (echo "Mkdir failed" && exit 1)
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY utility.sh /app/utility/utility.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /app/utility/utility.sh || (echo "Chmod failed" && exit 1)
 
 RUN chown -R node:node /home/node /app /mnt || (echo "Chown failed" && exit 1)
+RUN chmod 777 /app/output || (echo "Chmod output failed" && exit 1)
 
 USER node
 

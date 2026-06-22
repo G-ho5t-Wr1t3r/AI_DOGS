@@ -36,5 +36,5 @@ if [ -f /app/utility/utility.sh ]; then
 fi
 
 echo "--- Opening Interactive Shell ---"
-
+chmod 777 /app/output 2>/dev/null || true
 exec /bin/bash
