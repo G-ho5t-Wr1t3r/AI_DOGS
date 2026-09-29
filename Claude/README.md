@@ -30,14 +30,14 @@ docker volume create claude-auth-data
 > Primo avvio & Login (Linux)
 > ```
 > docker run -it --rm \
->  -v /home/node/.claude \
+>  -v claude-auth-data:/home/node/.claude \
 >  claude-env
 > ```
 
 > Primo avvio & Login (Windows)
 > ```
 > docker run -it --rm `
->   -v /home/node/.claude `
+>   -v claude-auth-data:/home/node/.claude `
 >   claude-env
 > ```
 
@@ -53,7 +53,7 @@ Uso quotidiano
 ```
 docker run -it --rm \
   -v /percorso/cartella/contesto:/mnt/host_context \
-  -v /home/node/.claude \
+  -v claude-auth-data:/home/node/.claude \
   -v ~/Desktop/Coding/Claude/claude_output:/app/output \
   claude-env
 ```
@@ -102,14 +102,14 @@ podman volume create claude-auth-data
 > Primo avvio & Login (Linux)
 > ```bash
 > podman run -it --rm \
->   -v /home/node/.claude \
+>   -v claude-auth-data:/home/node/.claude:Z \
 >   claude-env
 > ```
 
 > Primo avvio & Login (Windows)
 > ```powershell
 > podman run -it --rm `
->    -v /home/node/.claude `
+>    -v claude-auth-data:/home/node/.claude:Z `
 >    claude-env
 > ```
 
@@ -122,7 +122,7 @@ Uso quotidiano
 ```bash
 podman run -it --rm \
   -v /percorso/cartella/contesto:/mnt/host_context:Z \
-  -v /home/node/.claude \
+  -v claude-auth-data:/home/node/.claude:Z \
   -v ~/Desktop/Coding/Claude/claude_output:/app/output:Z \
   claude-env
 ```
@@ -169,7 +169,9 @@ File coinvolti (nel volume `/home/node/.claude`):
 
 ## Come montare la skill
 
-La skill sorgente vive in `Claude/.claudio/` e per essere attiva deve trovarsi in `~/.claude` (cioè `/home/node/.claude`) dentro il container. Il `Dockerfile` la copia già nell'immagine, ma **il volume di autenticazione `claude-auth-data`, montato su `/home/node`, può "coprirla"** se era stato creato prima che la skill esistesse. Per questo esiste un montaggio esplicito.
+La skill sorgente vive in `Claude/.claudio/` e per essere attiva deve trovarsi in `~/.claude` (cioè `/home/node/.claude`) dentro il container. Il `Dockerfile` la copia già nell'immagine, ma **il volume di autenticazione `claude-auth-data`, montato su `/home/node/.claude`, può "coprirla"** se era stato creato prima che la skill esistesse. Per questo esiste un montaggio esplicito.
+
+> ⚠️ Il volume `claude-auth-data` va montato su `/home/node/.claude`, mai sull'intera home (`/home/node`): montarlo sull'intera home fa sì che i successivi bind-mount della skill si annidino in `.claude/.claude/skills/claudio` invece che in `.claude/skills/claudio`, e Claude Code smette di rilevarla.
 
 ### Automatico (consigliato)
 
@@ -186,12 +188,12 @@ Vengono montati: `.claudio/claudio` in scrittura su `~/.claude/skills/claudio` (
 
 ### Manuale (Docker/Podman a mano)
 
-Nel comando di uso quotidiano aggiungere i tre bind-mount (sostituire il percorso del repo). Il volume `claude-auth-data` è montato su `/home/node`, i mount della skill vi si annidano dentro:
+Nel comando di uso quotidiano aggiungere i tre bind-mount (sostituire il percorso del repo). Il volume `claude-auth-data` è montato su `/home/node/.claude`, i mount della skill vi si annidano un solo livello sotto:
 
 ```bash
 docker run -it --rm \
   -v /percorso/cartella/contesto:/mnt/host_context \
-  -v claude-auth-data:/home/node \
+  -v claude-auth-data:/home/node/.claude \
   -v ~/Desktop/Coding/Claude/claude_output:/app/output \
   -v "/percorso/repo/Claude/.claudio/claudio":/home/node/.claude/skills/claudio \
   -v "/percorso/repo/Claude/.claudio/hooks/claudio-session-start.sh":/home/node/.claude/hooks/claudio-session-start.sh:ro \
@@ -207,7 +209,7 @@ Il bind-mount qui sopra è "vivo" ma non permanente: rilanciando senza quei `-v`
 
 ```bash
 docker run --rm \
-  -v claude-auth-data:/home/node \
+  -v claude-auth-data:/home/node/.claude \
   -v "/percorso/repo/Claude/.claudio":/src:ro \
   claude-env bash -lc '
     mkdir -p /home/node/.claude/skills /home/node/.claude/hooks &&
@@ -276,14 +278,14 @@ docker volume create claude-auth-data
 > First launch & Login (Linux)
 > ```
 > docker run -it --rm \
->  -v /home/node/.claude \
+>  -v claude-auth-data:/home/node/.claude \
 >  claude-env
 > ```
 
 > First launch & Login (Windows)
 > ```
 > docker run -it --rm `
->   -v /home/node/.claude `
+>   -v claude-auth-data:/home/node/.claude `
 >   claude-env
 > ```
 
@@ -299,7 +301,7 @@ Daily use
 ```
 docker run -it --rm \
   -v /path/to/context/folder:/mnt/host_context \
-  -v /home/node/.claude \
+  -v claude-auth-data:/home/node/.claude \
   -v ~/Desktop/Coding/Claude/claude_output:/app/output \
   claude-env
 ```
@@ -348,14 +350,14 @@ podman volume create claude-auth-data
 > First launch & Login (Linux)
 > ```bash
 > podman run -it --rm \
->   -v /home/node/.claude \
+>   -v claude-auth-data:/home/node/.claude:Z \
 >   claude-env
 > ```
 
 > First launch & Login (Windows)
 > ```powershell
 > podman run -it --rm `
->    -v /home/node/.claude `
+>    -v claude-auth-data:/home/node/.claude:Z `
 >    claude-env
 > ```
 
@@ -368,7 +370,7 @@ Daily use
 ```bash
 podman run -it --rm \
   -v /path/to/context/folder:/mnt/host_context:Z \
-  -v /home/node/.claude \
+  -v claude-auth-data:/home/node/.claude:Z \
   -v ~/Desktop/Coding/Claude/claude_output:/app/output:Z \
   claude-env
 ```
@@ -415,7 +417,9 @@ Files involved (in the `/home/node/.claude` volume):
 
 ## How to mount the skill
 
-The source skill lives in `Claude/.claudio/` and, to be active, it must sit in `~/.claude` (i.e. `/home/node/.claude`) inside the container. The `Dockerfile` already copies it into the image, but **the `claude-auth-data` auth volume, mounted at `/home/node`, can "shadow" it** if it was created before the skill existed. That's why there's an explicit mount.
+The source skill lives in `Claude/.claudio/` and, to be active, it must sit in `~/.claude` (i.e. `/home/node/.claude`) inside the container. The `Dockerfile` already copies it into the image, but **the `claude-auth-data` auth volume, mounted at `/home/node/.claude`, can "shadow" it** if it was created before the skill existed. That's why there's an explicit mount.
+
+> ⚠️ The `claude-auth-data` volume must be mounted at `/home/node/.claude`, never at the whole home (`/home/node`): mounting the whole home makes the skill bind-mounts nest at `.claude/.claude/skills/claudio` instead of `.claude/skills/claudio`, and Claude Code stops seeing it.
 
 ### Automatic (recommended)
 
@@ -432,12 +436,12 @@ Mounted items: `.claudio/claudio` writable at `~/.claude/skills/claudio` (so "ad
 
 ### Manual (Docker/Podman by hand)
 
-Add the three bind-mounts to your daily-use command (replace the repo path). The `claude-auth-data` volume is mounted at `/home/node`; the skill mounts nest inside it:
+Add the three bind-mounts to your daily-use command (replace the repo path). The `claude-auth-data` volume is mounted at `/home/node/.claude`; the skill mounts nest one level below it:
 
 ```bash
 docker run -it --rm \
   -v /path/to/context/folder:/mnt/host_context \
-  -v claude-auth-data:/home/node \
+  -v claude-auth-data:/home/node/.claude \
   -v ~/Desktop/Coding/Claude/claude_output:/app/output \
   -v "/path/to/repo/Claude/.claudio/claudio":/home/node/.claude/skills/claudio \
   -v "/path/to/repo/Claude/.claudio/hooks/claudio-session-start.sh":/home/node/.claude/hooks/claudio-session-start.sh:ro \
@@ -453,7 +457,7 @@ The bind-mount above is "live" but not permanent: if you relaunch without those 
 
 ```bash
 docker run --rm \
-  -v claude-auth-data:/home/node \
+  -v claude-auth-data:/home/node/.claude \
   -v "/path/to/repo/Claude/.claudio":/src:ro \
   claude-env bash -lc '
     mkdir -p /home/node/.claude/skills /home/node/.claude/hooks &&

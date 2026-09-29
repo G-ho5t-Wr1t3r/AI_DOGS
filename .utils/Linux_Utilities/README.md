@@ -51,8 +51,8 @@ Esempi:
 ## Cosa fa `-s` (Setup)
 
 1. Builda l'immagine `<ambiente>-env`.
-2. Crea il volume persistente `<ambiente>-auth-data`.
-3. Avvia il container: qui effettui il **login** (per Claude lancia `claude`). Le credenziali restano nel volume e non dovrai rifarlo.
+2. Crea i volumi persistenti `<ambiente>-auth-data` e `<ambiente>-config-data`.
+3. Avvia il container: qui effettui il **login** (per Claude lancia `claude`). Le credenziali restano nei volumi e non dovrai rifarlo.
 
 Con `-k` / `--skill` (solo Claude) monta anche la skill Claudio: vedere la sezione dedicata più sotto.
 
@@ -69,7 +69,7 @@ Aggiungere il flag `-k` (o `--skill`) al Setup di Claude:
 ./orchestrator_podman.sh  -c -s --skill # Podman (aggiunge :Z per SELinux)
 ```
 
-Il flag fa il **bind-mount** di tre elementi dentro il volume di autenticazione:
+Il flag fa il **bind-mount** di tre elementi dentro il volume `<ambiente>-auth-data`, che è montato direttamente su `~/.claude`:
 
 * `.claudio/claudio` → `~/.claude/skills/claudio` (in **scrittura**: gli "aggiungi alla skill" tornano nella propria copia del repo e sopravvivono ai riavvii)
 * `.claudio/hooks/claudio-session-start.sh` → `~/.claude/hooks/…` (sola lettura)
@@ -83,7 +83,7 @@ Se esiste già un volume `claude-auth-data` creato **prima** che la skill esiste
 
 ```bash
 docker run --rm \
-  -v claude-auth-data:/home/node \
+  -v claude-auth-data:/home/node/.claude \
   -v "/percorso/repo/Claude/.claudio":/src:ro \
   claude-env bash -lc '
     mkdir -p /home/node/.claude/skills /home/node/.claude/hooks &&
@@ -92,7 +92,9 @@ docker run --rm \
     cp /src/settings.json /home/node/.claude/settings.json'
 ```
 
-> Con Podman: stesso comando con `podman` e aggiungere `:Z` ai due bind-mount (`:/home/node:Z`, `/src:ro,Z`).
+> Con Podman: stesso comando con `podman` e aggiungere `:Z` ai due bind-mount (`:/home/node/.claude:Z`, `/src:ro,Z`).
+>
+> ⚠️ Il volume va montato su `/home/node/.claude`, non su `/home/node`: montarlo sull'intera home annida la skill in `.claude/.claude/skills/claudio` invece che in `.claude/skills/claudio`, e Claude Code non la rileva più.
 
 In alternativa, la via più pulita: rimuovere il volume e rifare il Setup, così la nuova immagine lo ripopola con la skill già dentro (sarà necessario rifare il login):
 
@@ -104,7 +106,7 @@ docker volume rm claude-auth-data
 ## Cosa fa `-d` (Delete)
 
 1. Rimuove l'immagine `<ambiente>-env`.
-2. Rimuove il volume `<ambiente>-auth-data`.
+2. Rimuove i volumi `<ambiente>-auth-data` e `<ambiente>-config-data`.
 3. Esegue `docker system prune -f`.
 
 > ⚠️ Attenzione: a differenza della versione Windows, qui il `docker system prune -f` è **globale** e ripulisce il dangling di tutto il sistema Docker, non solo di questo ambiente. Se non lo vuoi, togli quella riga.
@@ -115,8 +117,10 @@ In fase di Setup lo script monta:
 
 * `-v ~/Desktop/CHANGEME:/mnt/host_context`
   > La cartella del progetto, che l'`entrypoint.sh` sincronizza poi internamente.
-* `-v "<ambiente>-auth-data":/root`
-  > **Cruciale per il Login:** su Linux viene montata l'**intera home di root** in un unico volume, così token di autenticazione e configurazione persistono insieme.
+* `-v "<ambiente>-auth-data":/home/node/.claude` (per Claude) oppure `:/root/.gemini` (per Gemini)
+  > **Cruciale per il Login:** salva token di autenticazione e configurazione della CLI. Il percorso coincide con la variabile `CLAUDE_CONFIG_DIR` impostata nel Dockerfile (per Claude), così il volume corrisponde esattamente alla cartella dove la CLI si aspetta di trovare tutto — skill compresa.
+* `-v "<ambiente>-config-data":/home/node/.config` (per Claude) oppure `:/root/.config` (per Gemini)
+  > File di configurazione generici della CLI.
 * `-v "<output_dir>":/app/output`
   > La cartella dove la CLI salva i risultati.
 
@@ -131,6 +135,7 @@ claude-run() {
 		--userns=keep-id \
 		-v "$PWD:/mnt/host_context" \
 		-v claude-auth-data:/home/node/.claude \
+		-v claude-config-data:/home/node/.config \
 		-v $PWD:/app/output \
 		claude-env
 }
@@ -143,6 +148,7 @@ claude-run() {
 		--userns=keep-id \
 		-v "$PWD:/mnt/host_context:Z" \
 		-v claude-auth-data:/home/node/.claude:Z \
+		-v claude-config-data:/home/node/.config:Z \
 		-v "$PWD:/app/output:Z" \
 		claude-env
 }
@@ -154,7 +160,8 @@ Poi ricarichi la shell con `source ~/.bashrc` (o `~/.zshrc`) e da qualunque cart
 
 * **`permission denied` al lancio:** dagli i permessi con `chmod +x orchestrator.sh`.
 * **Build che non trova il Dockerfile:** ricorda che il contesto è la cartella corrente; lancialo da `Claude/` o `Gemini/`.
-* **Chiede il login ogni volta:** assicurati di non aver cancellato il volume `<ambiente>-auth-data` e di usare lo stesso mount (`:/root`) anche nella funzione della tua shell.
+* **Chiede il login ogni volta:** assicurati di non aver cancellato i volumi `<ambiente>-auth-data`/`<ambiente>-config-data` e di usare lo stesso mount (`:/home/node/.claude` per Claude, `:/root/.gemini` per Gemini) anche nella funzione della tua shell.
+* **La skill Claudio non compare (`.claude/.claude/skills/...` invece di `.claude/skills/...`):** il volume `<ambiente>-auth-data` è stato montato per errore sull'intera home invece che su `~/.claude`. Ricontrolla il mount (dev'essere `-v claude-auth-data:/home/node/.claude`, mai `-v claude-auth-data:/home/node`) in ogni comando/funzione che usi, script incluso.
 
 </details>
 
@@ -211,8 +218,8 @@ Examples:
 ## What `-s` (Setup) does
 
 1. Builds the `<environment>-env` image.
-2. Creates the persistent `<environment>-auth-data` volume.
-3. Starts the container: this is where you **log in** (for Claude run `claude`). Credentials stay in the volume so you won't have to redo it.
+2. Creates the persistent `<environment>-auth-data` and `<environment>-config-data` volumes.
+3. Starts the container: this is where you **log in** (for Claude run `claude`). Credentials stay in the volumes so you won't have to redo it.
 
 With `-k` / `--skill` (Claude only) it also mounts the Claudio skill: see the dedicated section below.
 
@@ -229,7 +236,7 @@ Add the `-k` (or `--skill`) flag to the Claude Setup:
 ./orchestrator_podman.sh  -c -s --skill # Podman (adds :Z for SELinux)
 ```
 
-The flag **bind-mounts** three items into the auth volume:
+The flag **bind-mounts** three items into the `<environment>-auth-data` volume, which is mounted directly at `~/.claude`:
 
 * `.claudio/claudio` → `~/.claude/skills/claudio` (**writable**: "add to the skill" edits flow back into your repo copy and survive restarts)
 * `.claudio/hooks/claudio-session-start.sh` → `~/.claude/hooks/…` (read-only)
@@ -243,7 +250,7 @@ If you already have a `claude-auth-data` volume created **before** the skill exi
 
 ```bash
 docker run --rm \
-  -v claude-auth-data:/home/node \
+  -v claude-auth-data:/home/node/.claude \
   -v "/path/to/repo/Claude/.claudio":/src:ro \
   claude-env bash -lc '
     mkdir -p /home/node/.claude/skills /home/node/.claude/hooks &&
@@ -252,7 +259,9 @@ docker run --rm \
     cp /src/settings.json /home/node/.claude/settings.json'
 ```
 
-> With Podman: same command with `podman`, adding `:Z` to the two bind-mounts (`:/home/node:Z`, `/src:ro,Z`).
+> With Podman: same command with `podman`, adding `:Z` to the two bind-mounts (`:/home/node/.claude:Z`, `/src:ro,Z`).
+>
+> ⚠️ The volume must be mounted at `/home/node/.claude`, not at `/home/node`: mounting the whole home nests the skill at `.claude/.claude/skills/claudio` instead of `.claude/skills/claudio`, and Claude Code stops seeing it.
 
 Alternatively, the cleanest path: remove the volume and re-run Setup, so the freshly built image repopulates it with the skill already inside (you'll have to log in again):
 
@@ -264,7 +273,7 @@ docker volume rm claude-auth-data
 ## What `-d` (Delete) does
 
 1. Removes the `<environment>-env` image.
-2. Removes the `<environment>-auth-data` volume.
+2. Removes the `<environment>-auth-data` and `<environment>-config-data` volumes.
 3. Runs `docker system prune -f`.
 
 > ⚠️ Heads up: unlike the Windows version, here `docker system prune -f` is **global** and cleans up dangling resources across your whole Docker system, not just this environment. If you don't want that, drop that line.
@@ -275,8 +284,10 @@ During Setup the script mounts:
 
 * `-v ~/Desktop/CHANGEME:/mnt/host_context`
   > The project folder, which `entrypoint.sh` then syncs internally.
-* `-v "<environment>-auth-data":/root`
-  > **Crucial for Login:** on Linux the **entire root home** is mounted as a single volume, so auth tokens and config persist together.
+* `-v "<environment>-auth-data":/home/node/.claude` (Claude) or `:/root/.gemini` (Gemini)
+  > **Crucial for Login:** stores the CLI's auth tokens and configuration. The path matches the `CLAUDE_CONFIG_DIR` variable set in the Dockerfile (for Claude), so the volume maps exactly onto the folder the CLI expects to find everything in — skill included.
+* `-v "<environment>-config-data":/home/node/.config` (Claude) or `:/root/.config` (Gemini)
+  > The CLI's generic configuration files.
 * `-v "<output_dir>":/app/output`
   > The folder where the CLI saves its results.
 
@@ -291,6 +302,7 @@ claude-run() {
         --userns=keep-id \
         -v "$PWD:/mnt/host_context" \
         -v claude-auth-data:/home/node/.claude \
+        -v claude-config-data:/home/node/.config \
         -v $PWD:/app/output \
         claude-env
 }
@@ -303,6 +315,7 @@ claude-run() {
         --userns=keep-id \
         -v "$PWD:/mnt/host_context:Z" \
         -v claude-auth-data:/home/node/.claude:Z \
+        -v claude-config-data:/home/node/.config:Z \
         -v "$PWD:/app/output:Z" \
         claude-env
 }
@@ -314,6 +327,7 @@ Then reload the shell with `source ~/.bashrc` (or `~/.zshrc`) and from any proje
 
 * **`permission denied` on launch:** grant permission with `chmod +x orchestrator.sh`.
 * **Build can't find the Dockerfile:** remember the context is the current directory; run it from `Claude/` or `Gemini/`.
-* **Asks for login every time:** make sure you haven't deleted the `<environment>-auth-data` volume, and that you use the same mount (`:/root`) in your shell function too.
+* **Asks for login every time:** make sure you haven't deleted the `<environment>-auth-data`/`<environment>-config-data` volumes, and that you use the same mount (`:/home/node/.claude` for Claude, `:/root/.gemini` for Gemini) in your shell function too.
+* **The Claudio skill doesn't show up (`.claude/.claude/skills/...` instead of `.claude/skills/...`):** the `<environment>-auth-data` volume got mounted on the whole home by mistake instead of on `~/.claude`. Double-check the mount (it must be `-v claude-auth-data:/home/node/.claude`, never `-v claude-auth-data:/home/node`) in every command/function you use, including the script.
 
 </details>

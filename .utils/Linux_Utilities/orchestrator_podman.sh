@@ -61,12 +61,14 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 if $claude; then
     name="claude"
-    home_dir="/home/node"
+    auth_dir="/home/node/.claude"
+    config_dir="/home/node/.config"
     build_dir="$script_dir/../../Claude"
     out_target="$script_dir/../../Claude/claude_output"
 else
     name="gemini"
-    home_dir="/root"
+    auth_dir="/root/.gemini"
+    config_dir="/root/.config"
     build_dir="$script_dir/../../Gemini"
     out_target="$script_dir/../../Gemini/gemini_output"
 fi
@@ -75,7 +77,8 @@ mkdir -p "$out_target"
 output_dir="$(cd "$out_target" && pwd)"
 
 image="${name}-env"
-volume="${name}-auth-data"
+auth_volume="${name}-auth-data"
+config_volume="${name}-config-data"
 
 # Build the bind mounts that inject the Claudio skill into the auth volume.
 # The :Z suffix relabels the host paths for SELinux (Bluefin and other
@@ -84,24 +87,26 @@ volume="${name}-auth-data"
 skill_mounts=()
 if $skill; then
     claudio_dir="$(cd "$build_dir/.claudio" && pwd)"
-    skill_mounts+=( -v "$claudio_dir/claudio":"$home_dir/.claude/skills/claudio":Z )
-    skill_mounts+=( -v "$claudio_dir/hooks/claudio-session-start.sh":"$home_dir/.claude/hooks/claudio-session-start.sh":ro,Z )
-    skill_mounts+=( -v "$claudio_dir/settings.json":"$home_dir/.claude/settings.json":ro,Z )
+    skill_mounts+=( -v "$claudio_dir/claudio":"$auth_dir/skills/claudio":Z )
+    skill_mounts+=( -v "$claudio_dir/hooks/claudio-session-start.sh":"$auth_dir/hooks/claudio-session-start.sh":ro,Z )
+    skill_mounts+=( -v "$claudio_dir/settings.json":"$auth_dir/settings.json":ro,Z )
 fi
 
 if $setup; then
     echo "Building Image..."
     podman build -t "$image" "$build_dir"
 
-    echo "Creating auth volume..."
-    podman volume create "$volume"
+    echo "Creating volumes..."
+    podman volume create "$auth_volume"
+    podman volume create "$config_volume"
 
     $skill && echo "Mounting Claudio skill..."
 
     echo "Starting container..."
     podman run -it --rm \
         -v ~/Desktop/CHANGEME:/mnt/host_context \
-        -v "$volume":"$home_dir" \
+        -v "$auth_volume":"$auth_dir" \
+        -v "$config_volume":"$config_dir" \
         -v "$output_dir":/app/output \
         "${skill_mounts[@]}" \
         "$image"
@@ -111,7 +116,7 @@ elif $delete; then
     podman rmi "$image"
 
     echo "Removing Volumes..."
-    podman volume rm "$volume"
+    podman volume rm "$auth_volume" "$config_volume"
 
     echo "Cleaning System..."
     podman system prune -f

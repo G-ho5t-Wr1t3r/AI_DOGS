@@ -86,10 +86,12 @@ In presenza di un volume `claude-auth-data` creato **prima** che la skill esiste
 
 ```bat
 docker run --rm ^
-  -v claude-auth-data:/home/node ^
+  -v claude-auth-data:/home/node/.claude ^
   -v "D:\percorso\repo\Claude\.claudio:/src:ro" ^
   claude-env bash -lc "mkdir -p /home/node/.claude/skills /home/node/.claude/hooks && cp -r /src/claudio /home/node/.claude/skills/claudio && cp /src/hooks/claudio-session-start.sh /home/node/.claude/hooks/ && cp /src/settings.json /home/node/.claude/settings.json"
 ```
+
+> ⚠️ Il volume va montato su `/home/node/.claude`, non su `/home/node`: montarlo sull'intera home annida la skill in `.claude/.claude/skills/claudio` invece che in `.claude/skills/claudio`, e Claude Code non la rileva più.
 
 In alternativa, rimuovere il volume con `Remove_Containers.bat` e rifare il `Setup.bat`: la nuova immagine lo ripopola con la skill già dentro (sarà necessario rifare il login).
 
@@ -99,10 +101,10 @@ Il `Launcher.bat` mappa automaticamente 4 volumi fondamentali (i nomi cambiano i
 
 * `-v "%PROJECT_PATH%:/mnt/host_context"`
   > Collega la cartella del tuo progetto al container. Lo script `entrypoint.sh` interno si occuperà poi di sincronizzarla nella cartella di lavoro.
-* `-v "<ambiente>-config-data:/root/.config"`
+* `-v "<ambiente>-config-data:/home/node/.config"` (per Claude) oppure `:/root/.config` (per Gemini)
   > Crea un volume Docker persistente per salvare i file di configurazione generici delle CLI.
-* `-v "<ambiente>-auth-data:/root/.claude"` (per Claude) oppure `:/root/.gemini` (per Gemini)
-  > **Cruciale per il Login:** Salva i token di autenticazione in modo persistente. Evita di dover rifare il login ogni volta che avvii il container. Per Claude il percorso è `/root/.claude`, coerente con la variabile `CLAUDE_CONFIG_DIR` impostata nel Dockerfile.
+* `-v "<ambiente>-auth-data:/home/node/.claude"` (per Claude) oppure `:/root/.gemini` (per Gemini)
+  > **Cruciale per il Login:** Salva i token di autenticazione in modo persistente. Evita di dover rifare il login ogni volta che avvii il container. Per Claude il percorso è `/home/node/.claude`, coerente con la variabile `CLAUDE_CONFIG_DIR` impostata nel Dockerfile.
 * `-v "%FINAL_OUT_PATH%:/app/output"`
   > Collega la cartella di output dove la CLI salverà eventuali risultati o file generati.
 
@@ -213,10 +215,12 @@ If you have a `claude-auth-data` volume created **before** the skill existed, th
 
 ```bat
 docker run --rm ^
-  -v claude-auth-data:/home/node ^
+  -v claude-auth-data:/home/node/.claude ^
   -v "D:\path\to\repo\Claude\.claudio:/src:ro" ^
   claude-env bash -lc "mkdir -p /home/node/.claude/skills /home/node/.claude/hooks && cp -r /src/claudio /home/node/.claude/skills/claudio && cp /src/hooks/claudio-session-start.sh /home/node/.claude/hooks/ && cp /src/settings.json /home/node/.claude/settings.json"
 ```
+
+> ⚠️ The volume must be mounted at `/home/node/.claude`, not at `/home/node`: mounting the whole home nests the skill at `.claude/.claude/skills/claudio` instead of `.claude/skills/claudio`, and Claude Code stops seeing it.
 
 Alternatively, remove the volume with `Remove_Containers.bat` and re-run `Setup.bat`: the freshly built image repopulates it with the skill already inside (you'll have to log in again).
 
@@ -226,10 +230,10 @@ Alternatively, remove the volume with `Remove_Containers.bat` and re-run `Setup.
 
 * `-v "%PROJECT_PATH%:/mnt/host_context"`
   > Connects your project folder to the container. The internal `entrypoint.sh` then syncs it into the working folder.
-* `-v "<environment>-config-data:/root/.config"`
+* `-v "<environment>-config-data:/home/node/.config"` (for Claude) or `:/root/.config` (for Gemini)
   > Creates a persistent Docker volume to store the CLI's generic configuration files.
-* `-v "<environment>-auth-data:/root/.claude"` (for Claude) or `:/root/.gemini` (for Gemini)
-  > **Crucial for Login:** Saves the authentication tokens persistently. Avoids re-logging in every time you start the container. For Claude the path is `/root/.claude`, matching the `CLAUDE_CONFIG_DIR` variable set in the Dockerfile.
+* `-v "<environment>-auth-data:/home/node/.claude"` (for Claude) or `:/root/.gemini` (for Gemini)
+  > **Crucial for Login:** Saves the authentication tokens persistently. Avoids re-logging in every time you start the container. For Claude the path is `/home/node/.claude`, matching the `CLAUDE_CONFIG_DIR` variable set in the Dockerfile.
 * `-v "%FINAL_OUT_PATH%:/app/output"`
   > Connects the output folder where the CLI will save any results or generated files.
 
