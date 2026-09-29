@@ -284,8 +284,7 @@ During Setup the script mounts:
 
 Over here you don't need the whole launcher-and-double-click apparatus you have to put up with on Windows. For the daily launch of a project, just teach your shell a little trick: add a function to your `~/.bashrc` (or `~/.zshrc`).
 
-<details open>
-	<summary><b>docker</b></summary>
+Docker
 ```bash
 claude-run() {
     docker run -it --rm \
@@ -296,10 +295,8 @@ claude-run() {
         claude-env
 }
 ```
-</details>
 
-<details>
-	<summary><b>podman</b></summary>
+Podman
 ```bash
 claude-run() {
     podman run -it --rm \
@@ -310,7 +307,6 @@ claude-run() {
         claude-env
 }
 ```
-</details>
 
 Then reload the shell with `source ~/.bashrc` (or `~/.zshrc`) and from any project folder just type `claude-run`. No dedicated script, no paths to rewrite every time: `$PWD` handles it for you. 
 
