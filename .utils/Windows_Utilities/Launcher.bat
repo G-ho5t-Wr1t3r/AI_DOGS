@@ -26,6 +26,7 @@ set "AUTH_VOL=claude-auth-data"
 set "CONFIG_VOL=claude-config-data"
 set "AUTH_DIR=/home/node/.claude"
 for %%I in ("%~dp0..\..\Claude\claude_output") do set "DEFAULT_OUT_PATH=%%~fI"
+for %%I in ("%~dp0..\..\Claude\.claudio") do set "CLAUDIO_DIR=%%~fI"
 goto ENGINE_DONE
 
 :SET_GEMINI
@@ -40,6 +41,22 @@ goto ENGINE_DONE
 :ENGINE_DONE
 echo.
 echo Environment: %ENGINE%
+
+REM --- Claudio skill (Claude only) ---
+REM SKILL_ARGS stays empty for Gemini, so the docker run lines below are unaffected.
+set "SKILL_ARGS="
+if /i not "%ENGINE%"=="Claude" goto SKILL_DONE
+
+:ASK_SKILL
+echo.
+set "MOUNT_SKILL="
+set /p MOUNT_SKILL="Mount the self-improving 'Claudio' skill? (Y/N) [Y]: "
+if "%MOUNT_SKILL%"=="" set "MOUNT_SKILL=Y"
+if /i "%MOUNT_SKILL%"=="n" goto SKILL_DONE
+if /i not "%MOUNT_SKILL%"=="y" goto ASK_SKILL
+set "SKILL_ARGS=-v "%CLAUDIO_DIR%\claudio:/home/node/.claude/skills/claudio" -v "%CLAUDIO_DIR%\hooks\claudio-session-start.sh:/home/node/.claude/hooks/claudio-session-start.sh:ro" -v "%CLAUDIO_DIR%\settings.json:/home/node/.claude/settings.json:ro""
+echo Claudio skill will be mounted from "%CLAUDIO_DIR%".
+:SKILL_DONE
 
 :INPUT_PROJECT
 echo.
@@ -101,6 +118,7 @@ if not "%SCR_DIR%"=="" set "FINAL_SCR_PATH=%SCR_DIR%\%SHORTCUT_FILENAME%"
 echo @echo off > "%FINAL_SCR_PATH%"
 echo echo Quick launch [%ENGINE%] - project: %PROJECT_NAME% >> "%FINAL_SCR_PATH%"
 echo docker run -it --rm ^
+ %SKILL_ARGS% ^
  -v "%PROJECT_PATH%:/mnt/host_context" ^
  -v "%CONFIG_VOL%:/root/.config" ^
  -v "%AUTH_VOL%:%AUTH_DIR%" ^
@@ -118,6 +136,7 @@ echo Starting the %ENGINE% container...
 echo.
 
 docker run -it --rm ^
+ %SKILL_ARGS% ^
  -v "%PROJECT_PATH%:/mnt/host_context" ^
  -v "%CONFIG_VOL%:/root/.config" ^
  -v "%AUTH_VOL%:%AUTH_DIR%" ^

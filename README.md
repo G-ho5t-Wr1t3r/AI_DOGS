@@ -13,7 +13,7 @@ Ambienti Docker/Podman pronti all'uso per far girare le CLI di **Claude** e **Ge
 * **Login persistente:** fai il login una volta, le credenziali restano salvate in un volume Docker e non te le richiede più.
 * **Contesto e output:** monti la cartella del progetto come riferimento e raccogli i risultati in una cartella di output dedicata.
 * **Script multi-OS:** utility per Linux e Windows che gestiscono setup, avvio per-progetto e pulizia.
-* **Skill "Claudio" (solo Claude):** una skill auto-migliorante che impara nuove regole quando glielo chiedi. Dettagli nel README della cartella `Claude`.
+* **Skill "Claudio" (solo Claude):** una skill auto-migliorante che impara nuove regole quando glielo chiedi. Si monta **automaticamente** col flag `-k`/`--skill` su Linux o rispondendo `Y` alla domanda su Windows; è anche possibile installarla a mano in modo definitivo. Dettagli nel README della cartella `Claude`.
 
 ## Struttura della repo
 
@@ -24,7 +24,8 @@ Ambienti Docker/Podman pronti all'uso per far girare le CLI di **Claude** e **Ge
 ├───.utils                         <- script di utilità, divisi per OS
 │   │   kill-frozen-container.py
 │   ├───Linux_Utilities
-│   │       orchestrator.sh
+│   │       orchestrator_docker.sh
+│   │       orchestrator_podman.sh
 │   │       README.md
 │   └───Windows_Utilities
 │           Setup.bat
@@ -64,11 +65,12 @@ Gli script sono in `.utils/Windows_Utilities/`:
 
 ### Linux (script automatico)
 
-In `.utils/Linux_Utilities/` trovi `orchestrator.sh`, che con due flag gestisce setup e rimozione:
+In `.utils/Linux_Utilities/` trovi `orchestrator_docker.sh` e `orchestrator_podman.sh`, che con due flag gestiscono setup e rimozione (aggiungere `-k`/`--skill` per montare la skill Claudio, solo Claude):
 
 ```bash
-./orchestrator.sh -c -s    # Claude, Setup
-./orchestrator.sh -g -d    # Gemini, Delete
+./orchestrator_docker.sh -c -s       # Claude, Setup
+./orchestrator_docker.sh -c -s -k    # Claude, Setup + skill Claudio
+./orchestrator_docker.sh -g -d       # Gemini, Delete
 ```
 
 ### Modalità manuale (Docker / Podman)
@@ -106,7 +108,7 @@ Ready-to-use Docker/Podman environments to run the **Claude** and **Gemini** CLI
 * **Persistent login:** log in once, the credentials stay saved in a Docker volume and you won't be asked again.
 * **Context and output:** mount your project folder as reference and collect results in a dedicated output folder.
 * **Multi-OS scripts:** utilities for Linux and Windows that handle setup, per-project launch and cleanup.
-* **"Claudio" skill (Claude only):** a self-improving skill that learns new rules when you ask it to. Details in the `Claude` folder README.
+* **"Claudio" skill (Claude only):** a self-improving skill that learns new rules when you ask it to. It mounts **automatically** via the `-k`/`--skill` flag on Linux or by answering `Y` to the prompt on Windows; you can also install it by hand, permanently. Details in the `Claude` folder README.
 
 ## Repo structure
 
@@ -117,7 +119,8 @@ Ready-to-use Docker/Podman environments to run the **Claude** and **Gemini** CLI
 ├───.utils                         <- utility scripts, split by OS
 │   │   kill-frozen-container.py
 │   ├───Linux_Utilities
-│   │       orchestrator.sh
+│   │       orchestrator_docker.sh
+│   │       orchestrator_podman.sh
 │   │       README.md
 │   └───Windows_Utilities
 │           Setup.bat
@@ -157,11 +160,12 @@ The scripts live in `.utils/Windows_Utilities/`:
 
 ### Linux (automatic script)
 
-In `.utils/Linux_Utilities/` you'll find `orchestrator.sh`, which handles setup and removal with two flags:
+In `.utils/Linux_Utilities/` you'll find `orchestrator_docker.sh` and `orchestrator_podman.sh`, which handle setup and removal with two flags (add `-k`/`--skill` to mount the Claudio skill, Claude only):
 
 ```bash
-./orchestrator.sh -c -s    # Claude, Setup
-./orchestrator.sh -g -d    # Gemini, Delete
+./orchestrator_docker.sh -c -s       # Claude, Setup
+./orchestrator_docker.sh -c -s -k    # Claude, Setup + Claudio skill
+./orchestrator_docker.sh -g -d       # Gemini, Delete
 ```
 
 ### Manual mode (Docker / Podman)

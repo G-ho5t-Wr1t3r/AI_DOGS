@@ -60,6 +60,39 @@ Se lavori spesso sullo stesso progetto, lo script ti offre la possibilità di cr
 * **Cosa fa:** Crea un nuovo mini-script configurato con l'ambiente e i percorsi esatti che hai appena inserito.
 * **Vantaggio:** La prossima volta ti basterà fare doppio clic sul file di avvio rapido per lanciare direttamente il container, senza dover ripetere la procedura.
 
+## Montare la skill "Claudio" (solo Claude)
+
+La skill vive in `Claude\.claudio\` e per funzionare deve trovarsi in `~/.claude` **dentro** il container.
+
+### Automatico
+
+Sia `Setup.bat` sia `Launcher.bat`, **alla scelta di Claude**, chiedono:
+
+```
+Mount the self-improving 'Claudio' skill? (Y/N) [Y]:
+```
+
+Premendo INVIO (o `Y`) gli script fanno il **bind-mount** di tre elementi nel volume di autenticazione:
+
+* `.claudio\claudio` → `/home/node/.claude/skills/claudio` (in **scrittura**: gli "aggiungi alla skill" tornano nella propria copia del repo)
+* `.claudio\hooks\claudio-session-start.sh` → `/home/node/.claude/hooks/…` (sola lettura)
+* `.claudio\settings.json` → `/home/node/.claude/settings.json` (sola lettura)
+
+Con Gemini la domanda **non** compare. Creando al passo "Avvio Rapido" un file `run_Claude_*.bat`, i mount della skill vengono scritti anche lì, così ogni doppio clic la rimonta.
+
+### Manuale, ma definitivo
+
+In presenza di un volume `claude-auth-data` creato **prima** che la skill esistesse, l'immagine la contiene ma il volume la "copre". Per installarla **in modo permanente nel volume**, una volta sola, copiare i file con un container usa-e-getta (sostituire il percorso del repo):
+
+```bat
+docker run --rm ^
+  -v claude-auth-data:/home/node ^
+  -v "D:\percorso\repo\Claude\.claudio:/src:ro" ^
+  claude-env bash -lc "mkdir -p /home/node/.claude/skills /home/node/.claude/hooks && cp -r /src/claudio /home/node/.claude/skills/claudio && cp /src/hooks/claudio-session-start.sh /home/node/.claude/hooks/ && cp /src/settings.json /home/node/.claude/settings.json"
+```
+
+In alternativa, rimuovere il volume con `Remove_Containers.bat` e rifare il `Setup.bat`: la nuova immagine lo ripopola con la skill già dentro (sarà necessario rifare il login).
+
 ## Mappatura dei Volumi Docker
 
 Il `Launcher.bat` mappa automaticamente 4 volumi fondamentali (i nomi cambiano in base all'ambiente scelto):
@@ -153,6 +186,39 @@ If you often work on the same project, the script lets you create a **quick-laun
 
 * **What it does:** Creates a new mini-script configured with the exact environment and paths you just entered.
 * **Benefit:** Next time you only need to double-click the quick-launch file to start the container directly, with no need to repeat the procedure.
+
+## Mounting the "Claudio" skill (Claude only)
+
+The skill lives in `Claude\.claudio\` and, to work, it must sit in `~/.claude` **inside** the container.
+
+### Automatic
+
+Both `Setup.bat` and `Launcher.bat`, **when you pick Claude**, ask:
+
+```
+Mount the self-improving 'Claudio' skill? (Y/N) [Y]:
+```
+
+Press ENTER (or `Y`) and the scripts **bind-mount** three items into the auth volume:
+
+* `.claudio\claudio` → `/home/node/.claude/skills/claudio` (**writable**: "add to the skill" edits flow back into your repo copy)
+* `.claudio\hooks\claudio-session-start.sh` → `/home/node/.claude/hooks/…` (read-only)
+* `.claudio\settings.json` → `/home/node/.claude/settings.json` (read-only)
+
+With Gemini the question **doesn't** appear. If at the "Quick Launch" step you create a `run_Claude_*.bat` file, the skill mounts are written into it too, so every double-click re-mounts it.
+
+### Manual, but permanent
+
+If you have a `claude-auth-data` volume created **before** the skill existed, the image contains it but the volume "shadows" it. Install it **permanently into the volume**, once, with a throwaway container (replace the repo path):
+
+```bat
+docker run --rm ^
+  -v claude-auth-data:/home/node ^
+  -v "D:\path\to\repo\Claude\.claudio:/src:ro" ^
+  claude-env bash -lc "mkdir -p /home/node/.claude/skills /home/node/.claude/hooks && cp -r /src/claudio /home/node/.claude/skills/claudio && cp /src/hooks/claudio-session-start.sh /home/node/.claude/hooks/ && cp /src/settings.json /home/node/.claude/settings.json"
+```
+
+Alternatively, remove the volume with `Remove_Containers.bat` and re-run `Setup.bat`: the freshly built image repopulates it with the skill already inside (you'll have to log in again).
 
 ## Docker Volume Mapping
 

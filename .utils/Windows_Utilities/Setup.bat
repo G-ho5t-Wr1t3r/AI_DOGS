@@ -50,6 +50,23 @@ echo Selected environment: %ENGINE%
 echo Build folder:         "%BUILD_DIR%"
 echo.
 
+REM --- Claudio skill (Claude only) ---
+REM SKILL_ARGS stays empty for Gemini, so the docker run line below is unaffected.
+set "SKILL_ARGS="
+if /i not "%ENGINE%"=="Claude" goto SKILL_DONE
+
+:ASK_SKILL
+set "MOUNT_SKILL="
+set /p MOUNT_SKILL="Mount the self-improving 'Claudio' skill? (Y/N) [Y]: "
+if "%MOUNT_SKILL%"=="" set "MOUNT_SKILL=Y"
+if /i "%MOUNT_SKILL%"=="n" goto SKILL_DONE
+if /i not "%MOUNT_SKILL%"=="y" goto ASK_SKILL
+for %%I in ("%BUILD_DIR%\.claudio") do set "CLAUDIO_DIR=%%~fI"
+set "SKILL_ARGS=-v "%CLAUDIO_DIR%\claudio:/home/node/.claude/skills/claudio" -v "%CLAUDIO_DIR%\hooks\claudio-session-start.sh:/home/node/.claude/hooks/claudio-session-start.sh:ro" -v "%CLAUDIO_DIR%\settings.json:/home/node/.claude/settings.json:ro""
+echo Claudio skill will be mounted from "%CLAUDIO_DIR%".
+echo.
+:SKILL_DONE
+
 if not exist "%BUILD_DIR%\Dockerfile" (
     echo ERROR: Dockerfile not found in "%BUILD_DIR%".
     echo Make sure this script lives in .utils\Windows_Utilities\
@@ -80,6 +97,7 @@ echo When you are done type 'exit': credentials stay saved in the volume.
 echo.
 
 docker run -it --rm ^
+ %SKILL_ARGS% ^
  -v "%AUTH_VOL%:%AUTH_DIR%" ^
  -v "%CONFIG_VOL%:%CONFIG_DIR%" ^
  %IMAGE%

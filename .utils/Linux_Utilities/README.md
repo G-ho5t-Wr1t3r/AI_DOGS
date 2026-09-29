@@ -34,13 +34,17 @@ Apri `orchestrator.sh` e sostituisci i percorsi placeholder con i tuoi reali:
 
 * **Target** (obbligatorio, sceglierne **uno**): `-c` Claude · `-g` Gemini
 * **Azione** (obbligatorio, sceglierne **una**): `-s` Setup · `-d` Delete
+* **Skill** (opzionale, **solo Claude**, solo con `-s`): `-k` / `--skill` monta la skill "Claudio"
 
 Esempi:
 
 ```bash
-./orchestrator.sh -c -s    # build di claude-env, crea il volume, avvia per il login
-./orchestrator.sh -g -d    # rimuove gemini-env e il suo volume
+./orchestrator_docker.sh -c -s       # build di claude-env, crea il volume, avvia per il login
+./orchestrator_docker.sh -c -s -k    # come sopra + monta la skill Claudio
+./orchestrator_docker.sh -g -d       # rimuove gemini-env e il suo volume
 ```
+
+> I file reali sono `orchestrator_docker.sh` e `orchestrator_podman.sh`: usare quello adatto al proprio motore. Gli esempi qui sotto usano la variante Docker.
 
 > Lo script accetta **esattamente un target e un'azione**: qualsiasi altra combinazione (zero flag, due target, ecc.) stampa l'usage ed esce.
 
@@ -49,6 +53,53 @@ Esempi:
 1. Builda l'immagine `<ambiente>-env`.
 2. Crea il volume persistente `<ambiente>-auth-data`.
 3. Avvia il container: qui effettui il **login** (per Claude lancia `claude`). Le credenziali restano nel volume e non dovrai rifarlo.
+
+Con `-k` / `--skill` (solo Claude) monta anche la skill Claudio: vedere la sezione dedicata più sotto.
+
+## Montare la skill "Claudio" (solo Claude)
+
+La skill vive in `Claude/.claudio/` e per funzionare deve trovarsi in `~/.claude` **dentro** il container. Con questi script è possibile montarla in due modi.
+
+### Automatico (al setup, consigliato)
+
+Aggiungere il flag `-k` (o `--skill`) al Setup di Claude:
+
+```bash
+./orchestrator_docker.sh -c -s -k       # Docker: build + montaggio skill + login
+./orchestrator_podman.sh  -c -s --skill # Podman (aggiunge :Z per SELinux)
+```
+
+Il flag fa il **bind-mount** di tre elementi dentro il volume di autenticazione:
+
+* `.claudio/claudio` → `~/.claude/skills/claudio` (in **scrittura**: gli "aggiungi alla skill" tornano nella propria copia del repo e sopravvivono ai riavvii)
+* `.claudio/hooks/claudio-session-start.sh` → `~/.claude/hooks/…` (sola lettura)
+* `.claudio/settings.json` → `~/.claude/settings.json` (sola lettura)
+
+È un mount "vivo": riflette sempre la copia nel repo e non altera il volume. Il flag vale **solo per Claude** e **solo in Setup**; con `-g` lo script esce con errore, con `-d` viene ignorato.
+
+### Manuale, ma definitivo (se non fatto al setup)
+
+Se esiste già un volume `claude-auth-data` creato **prima** che la skill esistesse, l'immagine la contiene ma il volume la "copre". Per installarla **in modo permanente nel volume** (resta anche senza flag), copiare i file una volta con un container usa-e-getta (sostituire il percorso del repo):
+
+```bash
+docker run --rm \
+  -v claude-auth-data:/home/node \
+  -v "/percorso/repo/Claude/.claudio":/src:ro \
+  claude-env bash -lc '
+    mkdir -p /home/node/.claude/skills /home/node/.claude/hooks &&
+    cp -r /src/claudio /home/node/.claude/skills/claudio &&
+    cp /src/hooks/claudio-session-start.sh /home/node/.claude/hooks/ &&
+    cp /src/settings.json /home/node/.claude/settings.json'
+```
+
+> Con Podman: stesso comando con `podman` e aggiungere `:Z` ai due bind-mount (`:/home/node:Z`, `/src:ro,Z`).
+
+In alternativa, la via più pulita: rimuovere il volume e rifare il Setup, così la nuova immagine lo ripopola con la skill già dentro (sarà necessario rifare il login):
+
+```bash
+docker volume rm claude-auth-data
+./orchestrator_docker.sh -c -s
+```
 
 ## Cosa fa `-d` (Delete)
 
@@ -143,13 +194,17 @@ Open `orchestrator.sh` and replace the placeholder paths with your real ones:
 
 * **Target** (required, pick **one**): `-c` Claude · `-g` Gemini
 * **Action** (required, pick **one**): `-s` Setup · `-d` Delete
+* **Skill** (optional, **Claude only**, only with `-s`): `-k` / `--skill` mounts the "Claudio" skill
 
 Examples:
 
 ```bash
-./orchestrator.sh -c -s    # build claude-env, create the volume, start for login
-./orchestrator.sh -g -d    # remove gemini-env and its volume
+./orchestrator_docker.sh -c -s       # build claude-env, create the volume, start for login
+./orchestrator_docker.sh -c -s -k    # same as above + mount the Claudio skill
+./orchestrator_docker.sh -g -d       # remove gemini-env and its volume
 ```
+
+> The real files are `orchestrator_docker.sh` and `orchestrator_podman.sh`: use the one matching your engine. The examples below use the Docker variant.
 
 > The script accepts **exactly one target and one action**: any other combination (no flags, two targets, etc.) prints the usage and exits.
 
@@ -158,6 +213,53 @@ Examples:
 1. Builds the `<environment>-env` image.
 2. Creates the persistent `<environment>-auth-data` volume.
 3. Starts the container: this is where you **log in** (for Claude run `claude`). Credentials stay in the volume so you won't have to redo it.
+
+With `-k` / `--skill` (Claude only) it also mounts the Claudio skill: see the dedicated section below.
+
+## Mounting the "Claudio" skill (Claude only)
+
+The skill lives in `Claude/.claudio/` and, to work, it must sit in `~/.claude` **inside** the container. These scripts let you mount it in two ways.
+
+### Automatic (at setup, recommended)
+
+Add the `-k` (or `--skill`) flag to the Claude Setup:
+
+```bash
+./orchestrator_docker.sh -c -s -k       # Docker: build + mount skill + login
+./orchestrator_podman.sh  -c -s --skill # Podman (adds :Z for SELinux)
+```
+
+The flag **bind-mounts** three items into the auth volume:
+
+* `.claudio/claudio` → `~/.claude/skills/claudio` (**writable**: "add to the skill" edits flow back into your repo copy and survive restarts)
+* `.claudio/hooks/claudio-session-start.sh` → `~/.claude/hooks/…` (read-only)
+* `.claudio/settings.json` → `~/.claude/settings.json` (read-only)
+
+It's a "live" mount: it always reflects the repo copy and never alters the volume. The flag applies to **Claude only** and **Setup only**; with `-g` the script errors out, with `-d` it's ignored.
+
+### Manual, but permanent (if you didn't do it at setup)
+
+If you already have a `claude-auth-data` volume created **before** the skill existed, the image contains it but the volume "shadows" it. To install it **permanently into the volume** (stays even without the flag), copy the files once with a throwaway container (replace the repo path):
+
+```bash
+docker run --rm \
+  -v claude-auth-data:/home/node \
+  -v "/path/to/repo/Claude/.claudio":/src:ro \
+  claude-env bash -lc '
+    mkdir -p /home/node/.claude/skills /home/node/.claude/hooks &&
+    cp -r /src/claudio /home/node/.claude/skills/claudio &&
+    cp /src/hooks/claudio-session-start.sh /home/node/.claude/hooks/ &&
+    cp /src/settings.json /home/node/.claude/settings.json'
+```
+
+> With Podman: same command with `podman`, adding `:Z` to the two bind-mounts (`:/home/node:Z`, `/src:ro,Z`).
+
+Alternatively, the cleanest path: remove the volume and re-run Setup, so the freshly built image repopulates it with the skill already inside (you'll have to log in again):
+
+```bash
+docker volume rm claude-auth-data
+./orchestrator_docker.sh -c -s
+```
 
 ## What `-d` (Delete) does
 

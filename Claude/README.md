@@ -164,8 +164,59 @@ Questo ambiente include **Claudio**, una skill personale che governa come vengon
 
 > A inizio di ogni sessione un **SessionStart hook** fa sì che Claudio si presenti e ti ricordi che è migliorabile al volo.
 
-File coinvolti (nel volume `/root/.claude`):
+File coinvolti (nel volume `/home/node/.claude`):
 `skills/claudio/SKILL.md` · `CLAUDE.md` · `hooks/claudio-session-start.sh` · `settings.json`
+
+## Come montare la skill
+
+La skill sorgente vive in `Claude/.claudio/` e per essere attiva deve trovarsi in `~/.claude` (cioè `/home/node/.claude`) dentro il container. Il `Dockerfile` la copia già nell'immagine, ma **il volume di autenticazione `claude-auth-data`, montato su `/home/node`, può "coprirla"** se era stato creato prima che la skill esistesse. Per questo esiste un montaggio esplicito.
+
+### Automatico (consigliato)
+
+Usare gli script di utilità: fanno il bind-mount della skill al setup/avvio.
+
+* **Linux** — aggiungere `-k` / `--skill` (solo Claude):
+  ```bash
+  ./orchestrator_docker.sh -c -s -k
+  ./orchestrator_podman.sh  -c -s --skill
+  ```
+* **Windows** — `Setup.bat` e `Launcher.bat` chiedono `Mount the ... 'Claudio' skill? (Y/N) [Y]` alla scelta di Claude.
+
+Vengono montati: `.claudio/claudio` in scrittura su `~/.claude/skills/claudio` (così gli "aggiungi alla skill" tornano nel repo), più hook e `settings.json` in sola lettura. Dettagli nei README di `.utils/Linux_Utilities/` e `.utils/Windows_Utilities/`.
+
+### Manuale (Docker/Podman a mano)
+
+Nel comando di uso quotidiano aggiungere i tre bind-mount (sostituire il percorso del repo). Il volume `claude-auth-data` è montato su `/home/node`, i mount della skill vi si annidano dentro:
+
+```bash
+docker run -it --rm \
+  -v /percorso/cartella/contesto:/mnt/host_context \
+  -v claude-auth-data:/home/node \
+  -v ~/Desktop/Coding/Claude/claude_output:/app/output \
+  -v "/percorso/repo/Claude/.claudio/claudio":/home/node/.claude/skills/claudio \
+  -v "/percorso/repo/Claude/.claudio/hooks/claudio-session-start.sh":/home/node/.claude/hooks/claudio-session-start.sh:ro \
+  -v "/percorso/repo/Claude/.claudio/settings.json":/home/node/.claude/settings.json:ro \
+  claude-env
+```
+
+> Con Podman aggiungere `:Z` ai bind-mount (es. `...:/home/node/.claude/skills/claudio:Z`).
+
+### Manuale, ma definitivo (installazione permanente nel volume)
+
+Il bind-mount qui sopra è "vivo" ma non permanente: rilanciando senza quei `-v`, la skill sparisce. Per installarla **una volta per tutte dentro il volume** (resta anche senza flag/mount), copiare i file con un container usa-e-getta:
+
+```bash
+docker run --rm \
+  -v claude-auth-data:/home/node \
+  -v "/percorso/repo/Claude/.claudio":/src:ro \
+  claude-env bash -lc '
+    mkdir -p /home/node/.claude/skills /home/node/.claude/hooks &&
+    cp -r /src/claudio /home/node/.claude/skills/claudio &&
+    cp /src/hooks/claudio-session-start.sh /home/node/.claude/hooks/ &&
+    cp /src/settings.json /home/node/.claude/settings.json'
+```
+
+In alternativa: eliminare il volume (`docker volume rm claude-auth-data`) e rifare il Setup, così la nuova immagine lo ripopola con la skill già dentro (sarà necessario rifare il login).
 
 # Su quali OS funziona?
 
@@ -175,7 +226,8 @@ Struttura della repo:
 ├───.utils
 │   │   kill-frozen-container.py
 │   ├───Linux_Utilities
-│   │       orchestrator.sh
+│   │       orchestrator_docker.sh
+│   │       orchestrator_podman.sh
 │   │       README.md
 │   └───Windows_Utilities
 │           Setup.bat
@@ -358,8 +410,59 @@ This environment includes **Claudio**, a personal skill that governs how files a
 
 > At the start of every session a **SessionStart hook** makes Claudio introduce itself and remind you it can be improved on the fly.
 
-Files involved (in the `/root/.claude` volume):
+Files involved (in the `/home/node/.claude` volume):
 `skills/claudio/SKILL.md` · `CLAUDE.md` · `hooks/claudio-session-start.sh` · `settings.json`
+
+## How to mount the skill
+
+The source skill lives in `Claude/.claudio/` and, to be active, it must sit in `~/.claude` (i.e. `/home/node/.claude`) inside the container. The `Dockerfile` already copies it into the image, but **the `claude-auth-data` auth volume, mounted at `/home/node`, can "shadow" it** if it was created before the skill existed. That's why there's an explicit mount.
+
+### Automatic (recommended)
+
+Use the utility scripts: they bind-mount the skill at setup/launch.
+
+* **Linux** — add `-k` / `--skill` (Claude only):
+  ```bash
+  ./orchestrator_docker.sh -c -s -k
+  ./orchestrator_podman.sh  -c -s --skill
+  ```
+* **Windows** — `Setup.bat` and `Launcher.bat` ask `Mount the ... 'Claudio' skill? (Y/N) [Y]` when you pick Claude.
+
+Mounted items: `.claudio/claudio` writable at `~/.claude/skills/claudio` (so "add to the skill" edits flow back into the repo), plus the hook and `settings.json` read-only. Details in the `.utils/Linux_Utilities/` and `.utils/Windows_Utilities/` READMEs.
+
+### Manual (Docker/Podman by hand)
+
+Add the three bind-mounts to your daily-use command (replace the repo path). The `claude-auth-data` volume is mounted at `/home/node`; the skill mounts nest inside it:
+
+```bash
+docker run -it --rm \
+  -v /path/to/context/folder:/mnt/host_context \
+  -v claude-auth-data:/home/node \
+  -v ~/Desktop/Coding/Claude/claude_output:/app/output \
+  -v "/path/to/repo/Claude/.claudio/claudio":/home/node/.claude/skills/claudio \
+  -v "/path/to/repo/Claude/.claudio/hooks/claudio-session-start.sh":/home/node/.claude/hooks/claudio-session-start.sh:ro \
+  -v "/path/to/repo/Claude/.claudio/settings.json":/home/node/.claude/settings.json:ro \
+  claude-env
+```
+
+> With Podman add `:Z` to the bind-mounts (e.g. `...:/home/node/.claude/skills/claudio:Z`).
+
+### Manual, but permanent (permanent install into the volume)
+
+The bind-mount above is "live" but not permanent: if you relaunch without those `-v`, the skill is gone. To install it **once and for all inside the volume** (it stays even without flags/mounts), copy the files with a throwaway container:
+
+```bash
+docker run --rm \
+  -v claude-auth-data:/home/node \
+  -v "/path/to/repo/Claude/.claudio":/src:ro \
+  claude-env bash -lc '
+    mkdir -p /home/node/.claude/skills /home/node/.claude/hooks &&
+    cp -r /src/claudio /home/node/.claude/skills/claudio &&
+    cp /src/hooks/claudio-session-start.sh /home/node/.claude/hooks/ &&
+    cp /src/settings.json /home/node/.claude/settings.json'
+```
+
+Alternatively: delete the volume (`docker volume rm claude-auth-data`) and re-run Setup, so the freshly built image repopulates it with the skill already inside (you'll have to log in again).
 
 # Which OSes does it work on?
 
@@ -369,7 +472,8 @@ Repo structure:
 ├───.utils
 │   │   kill-frozen-container.py
 │   ├───Linux_Utilities
-│   │       orchestrator.sh
+│   │       orchestrator_docker.sh
+│   │       orchestrator_podman.sh
 │   │       README.md
 │   └───Windows_Utilities
 │           Setup.bat
